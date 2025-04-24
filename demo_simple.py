@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 import librosa
+from librosa import display
 import argparse
 import torch
 import sys
@@ -18,9 +19,9 @@ import time
 
 if __name__ == '__main__':
         
-	enc_model_fpath = Path("encoder/saved_models/my_run.pt")
-	syn_model_fpath = Path("synthesizer/saved_models/my_run/my_run.pt")
-	voc_model_fpath = Path("vocoder/saved_models/my_run/my_run.pt")
+	enc_model_fpath = Path("encoder/saved_models/german_encoder.pt")
+	syn_model_fpath = Path("synthesizer/saved_models/german_synthesizer/german_synthesizer.pt")
+	voc_model_fpath = Path("vocoder/saved_models/german_vocoder/german_vocoder.pt")
  
 	if torch.cuda.is_available():
 		device_id = torch.cuda.current_device()
@@ -37,14 +38,15 @@ if __name__ == '__main__':
 		print("Using CPU for inference.\n")
     
     
-	## Load the models one by one.
+	# Load the models one by one.
 	print("Preparing the encoder, the synthesizer and the vocoder...")
 	encoder.load_model(enc_model_fpath)
 	synthesizer = Synthesizer(syn_model_fpath)
 	vocoder.load_model(voc_model_fpath)
+	
 
-	in_path = './test.wav'
-	in_text = 'Das ist ein Test mit meiner eigenen Stimme.'
+	in_path = './00000561.wav'
+	in_text = 'Vater! Der Schläfer ist erwacht!'
 	out_path = './gen.wav'
 
 	original_wav, sampling_rate = librosa.load(str(in_path))
@@ -69,12 +71,13 @@ if __name__ == '__main__':
 	else:
 		generated_wav = Synthesizer.griffin_lim(spec)
 	
-	write = True
-	if write:
-		sf.write(out_path, generated_wav.astype(np.float32), round(synthesizer.sample_rate / 1.0))	
-		print("Audio file has been written.")
-
+	print("Starting audio output")
 	audio_length = librosa.get_duration(generated_wav, sr = 14545)
 	sd.play(generated_wav.astype(np.float32), round(synthesizer.sample_rate / 1.0))
 	time.sleep(audio_length)
 	print("Done")
+	
+	write = True
+	if write:
+		sf.write(out_path, generated_wav.astype(np.float32), round(synthesizer.sample_rate / 1.0))	
+		print("Audio file has been written.")
